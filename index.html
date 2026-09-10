@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive terrain classification using region splitting, region merging and quadtree segmentation.">
+  <title>TerrainScope | Quadtree Terrain Classification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="noise"></div>
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="TerrainScope home">
+      <span class="brand-mark"><span></span><span></span><span></span><span></span></span>
+      <span>Terrain<span>Scope</span></span>
+    </a>
+    <nav>
+      <a href="#concept">Concept</a>
+      <a href="#demo">Live Demo</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#applications">Applications</a>
+    </nav>
+    <a class="nav-cta" href="#demo">Explore Quadtree <span>↗</span></a>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="hero-copy reveal">
+        <div class="eyebrow"><i></i> COMPUTER VISION • REMOTE SENSING</div>
+        <h1>See terrain<br><em>in regions.</em></h1>
+        <p class="hero-text">Region splitting and merging turns complex terrain imagery into meaningful zones using <strong>quadtree segmentation</strong> and simple image statistics.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#demo">Launch Interactive Demo <span>→</span></a>
+          <a class="text-link" href="#concept">Understand the method ↓</a>
+        </div>
+        <div class="hero-meta">
+          <div><strong>01</strong><span>Split</span></div>
+          <div><strong>02</strong><span>Merge</span></div>
+          <div><strong>03</strong><span>Classify</span></div>
+        </div>
+      </div>
+      <div class="hero-visual reveal">
+        <div class="visual-label top">QUADTREE / 2D TERRAIN GRID</div>
+        <div class="terrain-card">
+          <canvas id="heroCanvas" width="720" height="560"></canvas>
+          <div class="map-pin pin-a">FOREST</div>
+          <div class="map-pin pin-b">HILLS</div>
+          <div class="map-pin pin-c">PLAIN</div>
+          <div class="legend"><span><i class="forest"></i>Vegetation</span><span><i class="rock"></i>Rocky</span><span><i class="plain"></i>Plain</span></div>
+        </div>
+        <div class="visual-label bottom">REGION-BASED IMAGE ANALYSIS</div>
+      </div>
+    </section>
+
+    <section class="intro-strip">
+      <div><span class="big-number">01</span><span>WHAT IT DOES</span></div>
+      <p>Quadtree segmentation recursively splits an image into four regions when a region is not homogeneous. Similar neighboring regions are then merged to reduce unnecessary fragmentation.</p>
+      <div class="scroll-cue">SCROLL TO EXPLORE <span>↓</span></div>
+    </section>
+
+    <section id="concept" class="section concept">
+      <div class="section-heading reveal">
+        <span class="section-tag">THE CORE IDEA</span>
+        <h2>From one landscape<br>to <em>many regions.</em></h2>
+      </div>
+      <div class="concept-grid">
+        <article class="info-card dark reveal">
+          <span class="card-no">01</span>
+          <div class="icon split-icon"><span></span><span></span><span></span><span></span></div>
+          <h3>Region Splitting</h3>
+          <p>Start with the complete image. If the intensity variance of a region is high, split it into four smaller quadrants.</p>
+          <code>variance(region) &gt; threshold</code>
+        </article>
+        <article class="info-card light reveal">
+          <span class="card-no">02</span>
+          <div class="icon check-icon">✓</div>
+          <h3>Homogeneity Test</h3>
+          <p>Mean and variance are calculated from sampled pixels. Low variance means the region is sufficiently uniform.</p>
+          <code>variance(region) ≤ threshold</code>
+        </article>
+        <article class="info-card green reveal">
+          <span class="card-no">03</span>
+          <div class="icon merge-icon">⇄</div>
+          <h3>Region Merging</h3>
+          <p>Adjacent leaf regions with similar mean intensity and terrain class are merged into larger meaningful zones.</p>
+          <code>similar(A,B) = true</code>
+        </article>
+      </div>
+    </section>
+
+    <section id="demo" class="section demo-section">
+      <div class="section-heading split-heading reveal">
+        <div><span class="section-tag">INTERACTIVE LAB</span><h2>Build a <em>quadtree.</em></h2></div>
+        <p>Upload a terrain image, adjust the segmentation controls, and compare the original, split, merged, and classified regions.</p>
+      </div>
+
+      <div class="lab">
+        <aside class="lab-sidebar">
+          <div class="control-block upload-block">
+            <label>Terrain image</label>
+            <label class="upload-box" for="imageInput">
+              <span class="upload-icon">↑</span>
+              <strong>Upload image</strong>
+              <small>JPG, PNG, WEBP</small>
+            </label>
+            <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp">
+            <button class="button secondary full" id="sampleBtn">Use sample terrain</button>
+            <small id="fileName">No image selected</small>
+          </div>
+
+          <div class="control-block">
+            <label>Display mode</label>
+            <div class="terrain-select mode-select">
+              <button class="terrain-option active" data-mode="classified">Classified <span>●</span></button>
+              <button class="terrain-option" data-mode="quadtree">Quadtree <span>●</span></button>
+              <button class="terrain-option" data-mode="merged">Merged regions <span>●</span></button>
+              <button class="terrain-option" data-mode="original">Original image <span>●</span></button>
+            </div>
+          </div>
+
+          <div class="control-block">
+            <div class="range-label"><label>Homogeneity threshold</label><strong id="thresholdValue">34</strong></div>
+            <input id="threshold" type="range" min="5" max="80" value="34">
+            <small>Lower = more detailed regions</small>
+          </div>
+
+          <div class="control-block">
+            <div class="range-label"><label>Maximum depth</label><strong id="depthValue">5</strong></div>
+            <input id="depth" type="range" min="1" max="7" value="5">
+            <small>Higher = finer segmentation</small>
+          </div>
+
+          <div class="control-block">
+            <div class="range-label"><label>Merge tolerance</label><strong id="mergeValue">18</strong></div>
+            <input id="mergeTolerance" type="range" min="5" max="45" value="18">
+            <small>Higher = more neighboring regions merge</small>
+          </div>
+
+          <button class="button primary full" id="runBtn">▶ Run full analysis</button>
+          <button class="button secondary full" id="resetBtn">Reset view</button>
+
+          <div class="metric-box">
+            <div><span>SPLIT REGIONS</span><strong id="regionCount">—</strong></div>
+            <div><span>MERGED REGIONS</span><strong id="mergedCount">—</strong></div>
+            <div><span>MAX DEPTH</span><strong id="metricDepth">5</strong></div>
+            <div><span>REDUCTION</span><strong id="reduction">—</strong></div>
+            <div><span>STATUS</span><strong id="status">READY</strong></div>
+          </div>
+        </aside>
+
+        <div class="lab-canvas-wrap">
+          <div class="canvas-toolbar"><span id="canvasTitle">CLASSIFIED TERRAIN</span><span id="canvasMode">SAMPLE TERRAIN</span></div>
+          <canvas id="quadtreeCanvas" width="720" height="720"></canvas>
+          <div class="canvas-caption">
+            <span><i class="terrain-dot"></i>Original intensity</span>
+            <span><i class="grid-dot"></i>Quadtree boundaries</span>
+            <span><i class="merge-dot"></i>Merged/classified regions</span>
+          </div>
+          <div class="class-legend">
+            <span><i class="legend-water"></i>Water</span>
+            <span><i class="legend-forest"></i>Forest</span>
+            <span><i class="legend-soil"></i>Soil</span>
+            <span><i class="legend-rock"></i>Rocky</span>
+            <span><i class="legend-urban"></i>Urban</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="results-panel">
+        <div class="results-heading">
+          <span class="section-tag">ANALYSIS RESULTS</span>
+          <h3>Terrain class distribution</h3>
+        </div>
+        <div class="result-grid">
+          <div class="result-card"><span>WATER</span><strong id="waterPct">0%</strong><div class="bar"><i id="waterBar"></i></div></div>
+          <div class="result-card"><span>FOREST</span><strong id="forestPct">0%</strong><div class="bar"><i id="forestBar"></i></div></div>
+          <div class="result-card"><span>SOIL</span><strong id="soilPct">0%</strong><div class="bar"><i id="soilBar"></i></div></div>
+          <div class="result-card"><span>ROCKY</span><strong id="rockPct">0%</strong><div class="bar"><i id="rockBar"></i></div></div>
+          <div class="result-card"><span>URBAN</span><strong id="urbanPct">0%</strong><div class="bar"><i id="urbanBar"></i></div></div>
+        </div>
+        <p class="method-note">Classification is an educational RGB-based heuristic. For real remote-sensing applications, trained spectral/texture models and georeferenced multispectral data would normally be used.</p>
+      </div>
+    </section>
+
+    <section id="workflow" class="section workflow">
+      <div class="section-heading reveal">
+        <span class="section-tag">ALGORITHM</span>
+        <h2>The process, <em>step by step.</em></h2>
+      </div>
+      <div class="timeline">
+        <div class="step reveal"><div class="step-index">01</div><div><h3>Upload the terrain image</h3><p>The selected image is resized to a square processing canvas so the quadtree can recursively divide it into four equal quadrants.</p></div><div class="mini-visual root-box">IMAGE</div></div>
+        <div class="step reveal"><div class="step-index">02</div><div><h3>Test for homogeneity</h3><p>Sample pixels in each region and calculate mean intensity and variance.</p></div><div class="mini-visual"><span class="bars"></span><span class="bars"></span><span class="bars"></span></div></div>
+        <div class="step reveal"><div class="step-index">03</div><div><h3>Split non-uniform regions</h3><p>If variance is above the threshold, divide the region into four child regions and continue recursively.</p></div><div class="mini-visual split-mini"><i></i><i></i><i></i><i></i></div></div>
+        <div class="step reveal"><div class="step-index">04</div><div><h3>Merge compatible neighbors</h3><p>Leaf regions sharing an edge are merged when their mean intensity and terrain class are sufficiently similar.</p></div><div class="mini-visual merge-mini">A + B → AB</div></div>
+        <div class="step reveal"><div class="step-index">05</div><div><h3>Assign terrain classes</h3><p>Each final region is classified using its average RGB characteristics.</p></div><div class="class-pills"><span>WATER</span><span>FOREST</span><span>SOIL</span><span>ROCK</span><span>URBAN</span></div></div>
+      </div>
+    </section>
+
+    <section class="section quadtree-explain">
+      <div class="tree-copy reveal">
+        <span class="section-tag">DATA STRUCTURE</span>
+        <h2>A tree that mirrors<br>the <em>terrain.</em></h2>
+        <p>Every split creates four child nodes. This hierarchical structure concentrates computation around areas where terrain changes and keeps uniform areas coarse.</p>
+        <div class="formula">T(n) ≈ 4T(n/4) + O(n)</div>
+        <p class="muted">The actual cost depends on the homogeneity test, image size, and implementation.</p>
+      </div>
+      <div class="tree-diagram reveal" id="treeDiagram">
+        <div class="tree-level level-0"><span>ROOT</span></div>
+        <div class="connector"></div>
+        <div class="tree-level level-1"><span>A</span><span>B</span><span>C</span><span>D</span></div>
+        <div class="connector"></div>
+        <div class="tree-level level-2"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="tree-label">Each node = one terrain region</div>
+      </div>
+    </section>
+
+    <section id="applications" class="section applications">
+      <div class="section-heading split-heading reveal">
+        <div><span class="section-tag">WHY IT MATTERS</span><h2>Useful where terrain<br>is <em>spatially diverse.</em></h2></div>
+        <p>Quadtree-based segmentation is useful when large parts of an image are uniform while boundaries contain complex detail.</p>
+      </div>
+      <div class="app-grid">
+        <article class="app-card"><span>01</span><div class="app-icon">⌁</div><h3>Remote sensing</h3><p>Segment satellite imagery into land-cover regions and identify boundaries between terrain types.</p></article>
+        <article class="app-card"><span>02</span><div class="app-icon">⌖</div><h3>GIS & mapping</h3><p>Create hierarchical spatial representations for maps, terrain databases, and geographic analysis.</p></article>
+        <article class="app-card"><span>03</span><div class="app-icon">⌁</div><h3>Robotics</h3><p>Represent visible ground areas at different resolutions for navigation and scene understanding.</p></article>
+        <article class="app-card"><span>04</span><div class="app-icon">▦</div><h3>Image compression</h3><p>Use larger blocks in uniform areas and finer blocks around edges to represent images efficiently.</p></article>
+      </div>
+    </section>
+
+    <section class="section comparison">
+      <div class="section-heading reveal"><span class="section-tag">DECISION GUIDE</span><h2>Why use <em>quadtree?</em></h2></div>
+      <div class="compare-grid">
+        <div class="compare-row header"><span>METHOD</span><span>STRENGTH</span><span>LIMITATION</span></div>
+        <div class="compare-row"><span>Pixel-wise classification</span><span>Very detailed</span><span>Ignores spatial grouping</span></div>
+        <div class="compare-row highlight"><span><b>Quadtree segmentation</b></span><span><b>Hierarchical + spatial</b></span><span><b>Can over-split noisy areas</b></span></div>
+        <div class="compare-row"><span>Fixed block segmentation</span><span>Simple & fast</span><span>Rigid boundaries</span></div>
+      </div>
+    </section>
+
+    <section class="cta-section">
+      <div class="cta-inner reveal">
+        <span class="section-tag">TAKEAWAY</span>
+        <h2>Split where the terrain<br><em>changes. Merge where it agrees.</em></h2>
+        <p>That is the intuition behind region-based terrain classification with quadtrees.</p>
+        <a href="#demo" class="button light-button">Try the simulator ↑</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand"><span class="brand-mark"><span></span><span></span><span></span><span></span></span><span>Terrain<span>Scope</span></span></div>
+    <p>Region Splitting & Merging • Quadtree Segmentation</p>
+    <span class="mono">EDUCATIONAL DEMO / 2026</span>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>
